@@ -1,9 +1,10 @@
 const { Router } = require("express");
-const { Admin, Administrator, Issue } = require("../db");
+const { db} = require("../db");
 const administratorMiddleware = require("../middleware/administrator");
 const router = Router();
 const { JWT_SECRET } = require("../config");
 const jwt = require("jsonwebtoken");
+const { parseArgs } = require("util");
 // Admin Routes
 
 router.post('/signin', async (req, res) => {
@@ -12,10 +13,7 @@ router.post('/signin', async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
     const phonenumber = req.body.phonenumber;
-    const user = await Administrator.find({
-        email,
-        password,
-    })
+    const user = await db.query("SELECT email FROM administrators WHERE email = $1",[email])
     if (user.length != 0) {
         const token = jwt.sign({
             email
@@ -33,16 +31,8 @@ router.post('/signin', async (req, res) => {
 
 router.post('/issue', administratorMiddleware, async (req, res) => {
     // Implement course creation logic
-    const department = req.body.department;
-    const issue = req.body.issue;
-    const labNo = req.body.labNo;
-    const status = req.body.status;
-    const newIssue = await Issue.create({
-        department: department,
-        issue: issue,
-        labNo: labNo,
-        status: status
-    })
+    const {department,issue,labNo,status} = req.body;
+    const newIssue = await db.query("INSERT INTO issues (department,issue,labNo,status) VALUES ($1,$2,$3,$4)",[{department},{issue},{labNo},{status}])
     console.log(issue);
     res.json({
         message: 'Issue created successfully', issueId: newIssue._id
@@ -51,25 +41,21 @@ router.post('/issue', administratorMiddleware, async (req, res) => {
 });
 
 router.post('/permission', administratorMiddleware, async (req, res) => {
-    const email = req.body.email;
-    const password = req.body.password;
-    const phonenumber = req.body.phonenumber;
 
-    await Admin.create({
-        email: email,
-        password: password,
-        phonenumber: phonenumber
-    })
+    const a = req.body.email;
+    const b = req.body.password;
+    const c = req.body.phonenumber;
+    console.log(req.body);
+    await db.query("INSERT INTO admins (email,password,status,phonenumber) VALUES ($1,$2,$3,$4)",[a,b,"admin",c]);
     res.json({
         message: 'Admin created succesfully'
     })
 })
 
 router.delete('/delete/:adminId', administratorMiddleware, async (req, res) => {
-    await Admin.deleteMany({
-        _id: req.params.adminId
-    })
-    const response = await Admin.find({});
+    await db.query("DELETE FROM admins WHERE id=$1",req.params.adminId);
+    
+    const response = await db.query("SELECT * FROM admins")
     res.json({
         courses: response
     })
@@ -77,7 +63,7 @@ router.delete('/delete/:adminId', administratorMiddleware, async (req, res) => {
 })
 router.get('/showIssue', async (req, res) => {
 
-    const response = await Issue.find({});
+    const response = await db.query("SELECT * FROM issues");
     console.log(response);
     res.json({
         issue: response
