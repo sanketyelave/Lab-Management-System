@@ -40,7 +40,7 @@ const Navbar: React.FC = () => {
         {
             id: 4,
             title: "View Only",
-            path: "/view-only",
+            path: "/ViewOnly",
             cName: "nav-text",
 
         },

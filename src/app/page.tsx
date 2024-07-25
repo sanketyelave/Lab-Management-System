@@ -11,6 +11,8 @@ export default function Home() {
       <Hero />
       <Aboutus />
       <Footer />
+      <Home />
+      
     </div>
   );
 }
